@@ -1,27 +1,31 @@
-use twitch_irc::login::StaticLoginCredentials;
-use twitch_irc::ClientConfig;
-use twitch_irc::SecureTCPTransport;
-use twitch_irc::TwitchIRCClient;
-use twitch_irc::message;
+
+use twitch_irc::{login::StaticLoginCredentials, ClientConfig, SecureTCPTransport, TwitchIRCClient, message};
+
+use crate::vista::ui::app;
+const APP_ID: &str = "com.ruleta_gtk-rs.app";
 
 #[tokio::main]
-pub async fn main() {
-    // default configuration is to join chat as anonymous.
+pub async fn main(){
+        app().await;
+}
+
+
+
+fn message_recived(msg: message::PrivmsgMessage){
+    println!("Mensaje Recibido de {}: {}:", msg.sender.name, msg.message_text);
+}
+pub async fn connection() {
     let config = ClientConfig::default();
     let (mut incoming_messages, client) =
         TwitchIRCClient::<SecureTCPTransport, StaticLoginCredentials>::new(config);
 
-        
-    // first thing you should do: start consuming incoming messages,
-    // otherwise they will back up.
-    let join_handle = tokio::spawn(async move {
-        while let Some(message) = incoming_messages.recv().await {
-            //println!("Received message: {:?}", message);
 
+    let join_handle: tokio::task::JoinHandle<()> = tokio::spawn(async move {
+        while let Some(message) = incoming_messages.recv().await {
             match message {
                 message::ServerMessage::Privmsg(msg) => {
                     if msg.message_text.contains("!play") {
-                        println!("Mensaje Recibido de {}: {}:", msg.sender.name, msg.message_text);
+                        message_recived(msg);
                     }
                 }
                 _ => {}
@@ -30,19 +34,9 @@ pub async fn main() {
         }
     });
 
-    
-
-    // join a channel
-    // This function only returns an error if the passed channel login name is malformed,
-    // so in this simple case where the channel name is hardcoded we can ignore the potential
-    // error with `unwrap`.
     client.join("al_css_".to_owned()).unwrap();
+    println!("Escuchando...");
 
-    // keep the tokio executor alive.
-    // If you return instead of waiting the background task will exit.
+
     join_handle.await.unwrap();
-}
-
-fn ui(){
-
 }

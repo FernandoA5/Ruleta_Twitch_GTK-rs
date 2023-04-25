@@ -8,3 +8,4 @@ edition = "2021"
 [dependencies]
 twitch-irc = "5.0.0"
 tokio = { version = "1.15.0", features = ["full"] }
+gtk = { version = "0.6.6", package = "gtk4", features = ["v4_8"] }
